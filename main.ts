@@ -29,54 +29,86 @@ mat[4][3] = 1;
  */
 mat[0][7] = 1;
 displayMatrix(mat);
+const isValid = (x: number, y: number) => {
+  return x >= 0 && x <= 7 && y >= 0 && y <= 7; // Keep moves inside the board
+};
+const knightMoves = (start: number[], target: number[]) => {
+  //if both start and target are valid continue;
+  if (isValid(start[0], start[1]) && isValid(target[0], target[1])) {
+    const queue = [start];
+    const map = new Map();
+    const visited = new Set(); //we add each node we pass by , so we don't pass by same the node two times
+    visited.add(start.toString()); // Store visited positions as strings
+    const directions = [
+      [2, 1],
+      [2, -1],
+      [-2, 1],
+      [-2, -1],
+      [1, 2],
+      [1, -2],
+      [-1, 2],
+      [-1, -2],
+    ];
+    while (queue.length > 0) {
+      const shifted = queue.shift();
+      if (!shifted) return;
+      let stop = false;
+      const [x, y] = shifted;
+      const set = new Array(); //array to hold the possible positions for each move
 
-function knightShortestPath(start, target) {
-  if (start[0] === target[0] && start[1] === target[1]) {
-    return 0; // Already at the destination
-  }
-
-  const directions = [
-    [2, 1],
-    [2, -1],
-    [-2, 1],
-    [-2, -1],
-    [1, 2],
-    [1, -2],
-    [-1, 2],
-    [-1, -2],
-  ];
-
-  const queue: number[][] = [[...start, 0]]; // (x, y, moves)
-  const visited = new Set();
-  visited.add(start.toString()); // Store visited positions as strings
-
-  while (queue.length > 0) {
-    const [x, y, moves] = queue.shift();
-
-    for (const [dx, dy] of directions) {
-      const newX = x + dx;
-      const newY = y + dy;
-      const newPos = [newX, newY];
-
-      if (newX === target[0] && newY === target[1]) {
-        return moves + 1; // Found the shortest path
+      for (const [dx, dy] of directions) {
+        const newX = x + dx;
+        const newY = y + dy;
+        const newPos = [newX, newY];
+        if (target[0] === newPos[0] && target[1] === newPos[1]) {
+          stop = true;
+        }
+        if (isValid(newX, newY) && !visited.has(newPos.toString())) {
+          queue.push(newPos);
+          set.push(newPos);
+          visited.add(newPos.toString()); //enusre that we don't visit the same node two times
+        }
       }
-
-      if (isValid(newX, newY) && !visited.has(newPos.toString())) {
-        queue.push([newX, newY, moves + 1]);
-        visited.add(newPos.toString());
+      if (set.length > 0) map.set(shifted, set);
+      if (stop) break;
+    }
+    console.log(map);
+    return findShortestPath(map, start, target);
+  }
+  return "Your move is unvalid"; //if both of start and target or one of them is invalid , return undefined
+};
+const findShortestPath = (
+  map: Map<any, any>,
+  start: number[],
+  target: number[]
+) => {
+  const queue = [[start]];
+  const visited = new Set();
+  visited.add(start.toString());
+  while (queue.length > 0) {
+    const path = queue.shift();
+    if (!path) return;
+    const current = path[path.length - 1];
+    if (current[0] === target[0] && current[1] === target[1]) {
+      console.log(`You made it in ${path.length - 1} moves. Here's your path:`);
+      console.log(path.map((pos) => `[${pos}]`).join(" -> "));
+      return;
+    }
+    const positions: number[][] = map.get(current);
+    if (!positions) {
+      continue;
+    }
+    for (const position of positions) {
+      if (!visited.has(position.toString())) {
+        visited.add(position.toString());
+        queue.push([...path, position]);
       }
     }
   }
-
-  return -1; // This should never happen on a finite board
-}
-
-function isValid(x: number, y: number) {
-  return x >= 1 && x <= 8 && y >= 1 && y <= 8; // Keep moves inside the board
-}
-
-// Example usage:
-const start = [4, 3]; // (a1) in chess notation
-const target = [0, 7]; // (h8) in chess notation
-console.log("you made it in " + knightShortestPath(start, target) + " steps");
+  console.log("No path found.");
+};
+knightMoves([4, 3], [0, 7]);
+/**
+ * You made it in 4 moves. Here's your path:
+ * [4,3] -> [6,4] -> [4,5] -> [2,6] -> [0,7]
+ */
